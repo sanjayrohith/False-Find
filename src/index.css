@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=UnifrakturMaguntia&family=Source+Serif+4:wght@400;500;600&display=swap');
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 40 30% 96%;
+    --foreground: 30 10% 15%;
+
+    --card: 40 25% 94%;
+    --card-foreground: 30 10% 15%;
+
+    --popover: 40 25% 94%;
+    --popover-foreground: 30 10% 15%;
+
+    --primary: 30 10% 20%;
+    --primary-foreground: 40 30% 96%;
+
+    --secondary: 35 20% 88%;
+    --secondary-foreground: 30 10% 20%;
+
+    --muted: 35 15% 90%;
+    --muted-foreground: 30 10% 40%;
+
+    --accent: 15 70% 55%;
+    --accent-foreground: 40 30% 96%;
+
+    --destructive: 0 75% 50%;
+    --destructive-foreground: 40 30% 96%;
+
+    --success: 145 60% 35%;
+    --success-foreground: 40 30% 96%;
+
+    --warning: 40 90% 50%;
+    --warning-foreground: 30 10% 15%;
+
+    --border: 30 15% 80%;
+    --input: 30 15% 85%;
+    --ring: 30 10% 20%;
+
+    --radius: 0.25rem;
+
+    --sidebar-background: 40 25% 92%;
+    --sidebar-foreground: 30 10% 25%;
+    --sidebar-primary: 30 10% 20%;
+    --sidebar-primary-foreground: 40 30% 96%;
+    --sidebar-accent: 35 20% 88%;
+    --sidebar-accent-foreground: 30 10% 20%;
+    --sidebar-border: 30 15% 80%;
+    --sidebar-ring: 30 10% 20%;
+  }
+
+  .dark {
+    --background: 30 15% 10%;
+    --foreground: 40 20% 90%;
+
+    --card: 30 15% 12%;
+    --card-foreground: 40 20% 90%;
+
+    --popover: 30 15% 12%;
+    --popover-foreground: 40 20% 90%;
+
+    --primary: 40 25% 85%;
+    --primary-foreground: 30 15% 10%;
+
+    --secondary: 30 12% 18%;
+    --secondary-foreground: 40 20% 90%;
+
+    --muted: 30 12% 18%;
+    --muted-foreground: 40 15% 60%;
+
+    --accent: 15 70% 55%;
+    --accent-foreground: 40 30% 96%;
+
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 40 20% 90%;
+
+    --success: 145 55% 40%;
+    --success-foreground: 40 20% 90%;
+
+    --warning: 40 85% 50%;
+    --warning-foreground: 30 15% 10%;
+
+    --border: 30 12% 22%;
+    --input: 30 12% 22%;
+    --ring: 40 25% 75%;
+
+    --sidebar-background: 30 15% 8%;
+    --sidebar-foreground: 40 15% 85%;
+    --sidebar-primary: 40 25% 85%;
+    --sidebar-primary-foreground: 30 15% 10%;
+    --sidebar-accent: 30 12% 15%;
+    --sidebar-accent-foreground: 40 15% 85%;
+    --sidebar-border: 30 12% 18%;
+    --sidebar-ring: 40 25% 75%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Source Serif 4', Georgia, serif;
+  }
+}
+
+@layer utilities {
+  .font-newspaper-title {
+    font-family: 'UnifrakturMaguntia', 'Times New Roman', serif;
+  }
+  
+  .font-headline {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+  
+  .font-body {
+    font-family: 'Source Serif 4', Georgia, serif;
+  }
+  
+  .newspaper-texture {
+    background-image: 
+      repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent 28px,
+        hsl(var(--border) / 0.3) 28px,
+        hsl(var(--border) / 0.3) 29px
+      );
+  }
+  
+  .newspaper-divider {
+    border-top: 2px solid hsl(var(--foreground));
+    border-bottom: 1px solid hsl(var(--foreground));
+    height: 5px;
+  }
+  
+  .stamp-seal {
+    border: 3px solid hsl(var(--destructive));
+    border-radius: 50%;
+    padding: 0.75rem 1.5rem;
+    transform: rotate(-12deg);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+}
