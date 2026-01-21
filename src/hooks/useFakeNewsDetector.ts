@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import { analyzeEmotionalContent, EmotionalAnalysisResult } from '@/lib/emotionalAnalysis';
+import { analyzeSourceCredibility, SourceCredibilityResult } from '@/lib/sourceCredibility';
+import { checkFactsWithGoogle, calculateFactCheckScore, FactCheckResult, isFactCheckApiAvailable } from '@/services/factCheckApi';
 
 export interface AnalysisResult {
   id: string;
@@ -7,7 +10,14 @@ export interface AnalysisResult {
   confidence: number;
   reasons: string[];
   timestamp: Date;
+  // New enhanced analysis fields
+  emotionalAnalysis?: EmotionalAnalysisResult;
+  sourceCredibility?: SourceCredibilityResult;
+  factCheckResults?: FactCheckResult;
 }
+
+// Re-export types for use in components
+export type { EmotionalAnalysisResult, SourceCredibilityResult, FactCheckResult };
 
 const SENSATIONALIST_WORDS = [
   'shocking', 'unbelievable', 'you won\'t believe', 'breaking', 'urgent',
@@ -50,12 +60,12 @@ export function useFakeNewsDetector() {
 
     const lowerText = text.toLowerCase();
     const reasons: string[] = [];
-    let fakeScore = 0;
+    let heuristicScore = 0;
 
     // Check for sensationalist language
     const sensationalistFound = SENSATIONALIST_WORDS.filter(word => lowerText.includes(word));
     if (sensationalistFound.length > 0) {
-      fakeScore += sensationalistFound.length * 15;
+      heuristicScore += sensationalistFound.length * 15;
       reasons.push(`Sensationalist language detected: "${sensationalistFound.slice(0, 2).join('", "')}"`);
     }
 
@@ -63,50 +73,104 @@ export function useFakeNewsDetector() {
     const exclamationCount = (text.match(/!/g) || []).length;
     const questionCount = (text.match(/\?/g) || []).length;
     if (exclamationCount > 2 || questionCount > 3) {
-      fakeScore += 20;
+      heuristicScore += 20;
       reasons.push('Excessive punctuation suggests emotional manipulation');
     }
 
     // Check for ALL CAPS words
     const capsWords = text.match(/\b[A-Z]{4,}\b/g) || [];
     if (capsWords.length > 1) {
-      fakeScore += 15;
+      heuristicScore += 15;
       reasons.push('Multiple ALL CAPS words indicate sensationalism');
     }
 
     // Check for credibility indicators
     const credibilityFound = CREDIBILITY_PHRASES.some(phrase => lowerText.includes(phrase));
     if (credibilityFound) {
-      fakeScore -= 20;
+      heuristicScore -= 20;
       reasons.push('Contains source attribution (positive indicator)');
     }
 
     // Check text length
     if (text.length < 50) {
-      fakeScore += 10;
+      heuristicScore += 10;
       reasons.push('Very short content lacks context');
     }
 
     // Check for URLs
     if (text.includes('http') || text.includes('www')) {
-      fakeScore -= 10;
+      heuristicScore -= 10;
       reasons.push('Contains external links for verification');
     }
 
-    // Add some randomness for demo purposes
-    fakeScore += Math.random() * 20 - 10;
+    // Clamp heuristic score
+    heuristicScore = Math.max(0, Math.min(100, heuristicScore));
 
-    // Clamp score
-    fakeScore = Math.max(0, Math.min(100, fakeScore));
+    // === NEW: Emotional Analysis ===
+    const emotionalAnalysis = analyzeEmotionalContent(text);
+    if (emotionalAnalysis.triggers.length > 0 && emotionalAnalysis.manipulationLevel !== 'low') {
+      reasons.push(`Emotional manipulation detected (${emotionalAnalysis.manipulationLevel} level)`);
+    }
+
+    // === NEW: Source Credibility Analysis ===
+    const sourceCredibility = analyzeSourceCredibility(text);
+    sourceCredibility.factors.forEach(factor => {
+      if (!reasons.includes(factor)) {
+        reasons.push(factor);
+      }
+    });
+
+    // === NEW: Google Fact Check API (Optional) ===
+    let factCheckResults: FactCheckResult | undefined;
+    let factCheckScore = 50; // Neutral default
+    
+    if (isFactCheckApiAvailable()) {
+      try {
+        factCheckResults = await checkFactsWithGoogle(text);
+        if (factCheckResults.claims.length > 0) {
+          factCheckScore = calculateFactCheckScore(factCheckResults);
+          const topClaim = factCheckResults.claims[0];
+          reasons.push(`Related claim fact-checked by ${topClaim.publisher}: "${topClaim.rating}"`);
+        }
+      } catch (error) {
+        console.error('Fact check failed:', error);
+      }
+    }
+
+    // === Weighted Score Calculation ===
+    // Weights: Heuristic 30%, Emotional 30%, Source 40%
+    // If fact check available, redistribute: Heuristic 20%, Emotional 20%, Source 30%, FactCheck 30%
+    let finalScore: number;
+    
+    if (factCheckResults && factCheckResults.claims.length > 0) {
+      finalScore = (
+        heuristicScore * 0.20 +
+        emotionalAnalysis.score * 0.20 +
+        sourceCredibility.score * 0.30 +
+        factCheckScore * 0.30
+      );
+    } else {
+      finalScore = (
+        heuristicScore * 0.30 +
+        emotionalAnalysis.score * 0.30 +
+        sourceCredibility.score * 0.40
+      );
+    }
+
+    // Add some small randomness for demo purposes
+    finalScore += Math.random() * 10 - 5;
+
+    // Clamp final score
+    finalScore = Math.max(0, Math.min(100, finalScore));
 
     // Determine verdict
     let verdict: 'fake' | 'verified' | 'uncertain';
-    if (fakeScore >= 50) {
+    if (finalScore >= 50) {
       verdict = 'fake';
       if (reasons.length === 0) {
         reasons.push('Multiple indicators suggest unreliable content');
       }
-    } else if (fakeScore <= 25) {
+    } else if (finalScore <= 25) {
       verdict = 'verified';
       if (reasons.filter(r => !r.includes('positive')).length === 0) {
         reasons.push('Content appears to follow journalistic standards');
@@ -120,9 +184,13 @@ export function useFakeNewsDetector() {
       id: crypto.randomUUID(),
       text,
       verdict,
-      confidence: verdict === 'uncertain' ? 50 : Math.round(Math.abs(50 - fakeScore) * 2),
+      confidence: verdict === 'uncertain' ? 50 : Math.round(Math.abs(50 - finalScore) * 2),
       reasons,
-      timestamp: new Date()
+      timestamp: new Date(),
+      // Include enhanced analysis results
+      emotionalAnalysis,
+      sourceCredibility,
+      factCheckResults
     };
 
     setCurrentResult(result);

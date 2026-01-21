@@ -2,7 +2,8 @@ import { AnalysisResult } from '@/hooks/useFakeNewsDetector';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { CheckCircle2, XCircle, AlertCircle, ChevronDown, FileSearch, Stamp } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { CheckCircle2, XCircle, AlertCircle, ChevronDown, FileSearch, Stamp, Brain, Globe, Search, ExternalLink, Shield, ShieldAlert, ShieldQuestion } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -167,6 +168,273 @@ export function VerdictDisplay({ result }: VerdictDisplayProps) {
             </div>
           </CollapsibleContent>
         </Collapsible>
+
+        {/* Enhanced Analysis Accordion Sections */}
+        <Accordion type="multiple" className="space-y-2">
+          {/* Emotional Analysis Section */}
+          {result.emotionalAnalysis && (
+            <AccordionItem value="emotional" className="border-2 border-border">
+              <AccordionTrigger className="px-4 py-3 bg-secondary/30 hover:bg-secondary/50 hover:no-underline">
+                <div className="flex items-center gap-3">
+                  <Brain className="h-5 w-5 text-purple-500" />
+                  <span className="font-headline font-bold uppercase tracking-wider text-sm">
+                    Emotional Analysis
+                  </span>
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      "ml-2 text-xs",
+                      result.emotionalAnalysis.manipulationLevel === 'low' && "border-success text-success",
+                      result.emotionalAnalysis.manipulationLevel === 'medium' && "border-warning text-warning",
+                      result.emotionalAnalysis.manipulationLevel === 'high' && "border-destructive text-destructive"
+                    )}
+                  >
+                    {result.emotionalAnalysis.manipulationLevel.toUpperCase()}
+                  </Badge>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="space-y-4 pt-2">
+                  {/* Emotional Score Bar */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Manipulation Score</span>
+                      <span className="font-mono font-bold">{result.emotionalAnalysis.score}/100</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={cn(
+                          "h-full transition-all duration-500",
+                          result.emotionalAnalysis.score < 25 && "bg-success",
+                          result.emotionalAnalysis.score >= 25 && result.emotionalAnalysis.score < 55 && "bg-warning",
+                          result.emotionalAnalysis.score >= 55 && "bg-destructive"
+                        )}
+                        style={{ width: `${result.emotionalAnalysis.score}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Dominant Emotion */}
+                  {result.emotionalAnalysis.dominantEmotion && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">Dominant Emotion:</span>
+                      <Badge variant="secondary">{result.emotionalAnalysis.dominantEmotion}</Badge>
+                    </div>
+                  )}
+
+                  {/* Triggered Categories */}
+                  {result.emotionalAnalysis.triggers.length > 0 ? (
+                    <div className="space-y-2">
+                      <span className="text-sm text-muted-foreground">Detected Triggers:</span>
+                      <div className="grid gap-2">
+                        {result.emotionalAnalysis.triggers.map((trigger, idx) => (
+                          <div key={idx} className="p-3 bg-background/50 border border-border rounded">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium text-sm">{trigger.category}</span>
+                              <span className="text-xs text-muted-foreground">
+                                Intensity: {trigger.intensity}%
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {trigger.words.map((word, widx) => (
+                                <Badge key={widx} variant="outline" className="text-xs">
+                                  {word}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      No significant emotional manipulation patterns detected.
+                    </p>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
+          {/* Source Credibility Section */}
+          {result.sourceCredibility && (
+            <AccordionItem value="source" className="border-2 border-border">
+              <AccordionTrigger className="px-4 py-3 bg-secondary/30 hover:bg-secondary/50 hover:no-underline">
+                <div className="flex items-center gap-3">
+                  <Globe className="h-5 w-5 text-blue-500" />
+                  <span className="font-headline font-bold uppercase tracking-wider text-sm">
+                    Source Credibility
+                  </span>
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      "ml-2 text-xs",
+                      result.sourceCredibility.overallReputation === 'trusted' && "border-success text-success",
+                      result.sourceCredibility.overallReputation === 'mixed' && "border-warning text-warning",
+                      result.sourceCredibility.overallReputation === 'untrusted' && "border-destructive text-destructive",
+                      result.sourceCredibility.overallReputation === 'unknown' && "border-muted-foreground text-muted-foreground"
+                    )}
+                  >
+                    {result.sourceCredibility.overallReputation.toUpperCase()}
+                  </Badge>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="space-y-4 pt-2">
+                  {/* Credibility Score Bar */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Risk Score</span>
+                      <span className="font-mono font-bold">{result.sourceCredibility.score}/100</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={cn(
+                          "h-full transition-all duration-500",
+                          result.sourceCredibility.score < 30 && "bg-success",
+                          result.sourceCredibility.score >= 30 && result.sourceCredibility.score < 60 && "bg-warning",
+                          result.sourceCredibility.score >= 60 && "bg-destructive"
+                        )}
+                        style={{ width: `${result.sourceCredibility.score}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Found Sources */}
+                  {result.sourceCredibility.foundSources.length > 0 ? (
+                    <div className="space-y-2">
+                      <span className="text-sm text-muted-foreground">Detected Sources:</span>
+                      <div className="grid gap-2">
+                        {result.sourceCredibility.foundSources.map((source, idx) => (
+                          <div key={idx} className="flex items-center gap-3 p-2 bg-background/50 border border-border rounded">
+                            {source.reputation === 'trusted' && <Shield className="h-4 w-4 text-success" />}
+                            {source.reputation === 'unreliable' && <ShieldAlert className="h-4 w-4 text-destructive" />}
+                            {source.reputation === 'satire' && <ShieldQuestion className="h-4 w-4 text-warning" />}
+                            {(source.reputation === 'mixed' || source.reputation === 'unknown') && <ShieldQuestion className="h-4 w-4 text-muted-foreground" />}
+                            <div className="flex-1">
+                              <span className="font-mono text-sm">{source.domain}</span>
+                              {source.category && (
+                                <span className="text-xs text-muted-foreground ml-2">({source.category})</span>
+                              )}
+                            </div>
+                            <Badge 
+                              variant="outline" 
+                              className={cn(
+                                "text-xs",
+                                source.reputation === 'trusted' && "border-success text-success",
+                                source.reputation === 'unreliable' && "border-destructive text-destructive",
+                                source.reputation === 'satire' && "border-warning text-warning"
+                              )}
+                            >
+                              {source.reputation}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      No external sources or URLs detected in the content.
+                    </p>
+                  )}
+
+                  {/* Factors */}
+                  {result.sourceCredibility.factors.length > 0 && (
+                    <div className="space-y-2">
+                      <span className="text-sm text-muted-foreground">Analysis Factors:</span>
+                      <ul className="space-y-1">
+                        {result.sourceCredibility.factors.map((factor, idx) => (
+                          <li key={idx} className="text-sm flex items-start gap-2">
+                            <span className="text-muted-foreground">•</span>
+                            {factor}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
+          {/* Fact Check Results Section (Only shown if available) */}
+          {result.factCheckResults && result.factCheckResults.available && (
+            <AccordionItem value="factcheck" className="border-2 border-border">
+              <AccordionTrigger className="px-4 py-3 bg-secondary/30 hover:bg-secondary/50 hover:no-underline">
+                <div className="flex items-center gap-3">
+                  <Search className="h-5 w-5 text-green-500" />
+                  <span className="font-headline font-bold uppercase tracking-wider text-sm">
+                    External Fact Checks
+                  </span>
+                  {result.factCheckResults.claims.length > 0 && (
+                    <Badge variant="outline" className="ml-2 text-xs">
+                      {result.factCheckResults.claims.length} FOUND
+                    </Badge>
+                  )}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="space-y-4 pt-2">
+                  {result.factCheckResults.error ? (
+                    <p className="text-sm text-destructive">
+                      Error: {result.factCheckResults.error}
+                    </p>
+                  ) : result.factCheckResults.claims.length > 0 ? (
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Related claims found by fact-checking organizations:
+                      </p>
+                      {result.factCheckResults.claims.map((claim, idx) => (
+                        <div key={idx} className="p-3 bg-background/50 border border-border rounded space-y-2">
+                          <p className="text-sm font-medium">"{claim.text}"</p>
+                          <div className="flex flex-wrap items-center gap-2 text-xs">
+                            {claim.claimant && (
+                              <span className="text-muted-foreground">
+                                Claimed by: {claim.claimant}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Badge 
+                                variant="outline"
+                                className={cn(
+                                  "text-xs",
+                                  claim.ratingValue !== undefined && claim.ratingValue <= 30 && "border-success text-success",
+                                  claim.ratingValue !== undefined && claim.ratingValue > 30 && claim.ratingValue <= 60 && "border-warning text-warning",
+                                  claim.ratingValue !== undefined && claim.ratingValue > 60 && "border-destructive text-destructive"
+                                )}
+                              >
+                                {claim.rating}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                by {claim.publisher}
+                              </span>
+                            </div>
+                            {claim.url && (
+                              <a 
+                                href={claim.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-primary hover:underline flex items-center gap-1"
+                              >
+                                View <ExternalLink className="h-3 w-3" />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      No related fact-checks found for this content.
+                    </p>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+        </Accordion>
 
         {/* Analyzed Text Preview - styled like a clipping */}
         <div className="relative p-4 bg-secondary/30 border-2 border-dashed border-border">
